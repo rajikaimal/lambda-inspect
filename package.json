@@ -1,5 +1,5 @@
 {
-  "name": "lambda-inspect",
+  "name": "lambda-inspect-monorepo",
   "version": "0.0.1",
   "private": true,
   "description": "",
@@ -7,10 +7,9 @@
   "license": "MIT",
   "author": "",
   "type": "module",
-  "main": "index.js",
   "scripts": {
-    "dev": "tsdown --watch",
-    "build": "tsdown",
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build",
     "knip": "knip",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
