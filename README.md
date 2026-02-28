@@ -9,6 +9,12 @@ Made with Google Antigravity.
 - **Bad Practice Detection**: Identifies libraries instantiated inside the handler that should be in the global scope for better performance (e.g., AWS SDK clients, database connections).
 - **Unused File Detection**: Integrates with Knip to find files that are not being used in your project.
 
+# Install
+
+```bash
+npx lambda-inspect@latest <path-to-handler>
+```
+
 ## Usage
 
 After building the project, you can run the CLI using:
@@ -39,12 +45,12 @@ pnpm install
 
 ### Commands
 
-| Command       | Description                        |
-| ------------- | ---------------------------------- |
-| `pnpm build`  | Build the project                  |
-| `pnpm dev`    | Run in development mode with watch |
-| `pnpm test`   | Run tests                          |
-| `pnpm lint`   | Run linting (using oxlint)         |
+| Command             | Description                        |
+| ------------------- | ---------------------------------- |
+| `pnpm build`        | Build the project                  |
+| `pnpm dev`          | Run in development mode with watch |
+| `pnpm test`         | Run tests                          |
+| `pnpm lint`         | Run linting (using oxlint)         |
 | `pnpm format`       | Format code (using oxfmt)          |
 | `pnpm knip`         | Run Knip analysis                  |
 | `pnpm scan:secrets` | Scan for secrets using Gitleaks    |

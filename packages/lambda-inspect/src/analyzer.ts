@@ -1,7 +1,7 @@
 import ts from "typescript";
 import path from "node:path";
 
-import { isHandler, checkHandlerBody, checkImportForV2 } from "./utils/ast";
+import { isHandler, checkHandlerBody, checkImportForV2, type Finding } from "./utils/ast";
 
 function getExpectedHandlerName(filePath: string): string {
   const baseName = path.basename(filePath);
@@ -12,7 +12,7 @@ function getExpectedHandlerName(filePath: string): string {
   return "handler";
 }
 
-export async function analyzeLambda(filePath: string): Promise<string[]> {
+export async function analyzeLambda(filePath: string): Promise<Finding[]> {
   const program = ts.createProgram([filePath], {
     target: ts.ScriptTarget.Latest,
     moduleResolution: ts.ModuleResolutionKind.Node10,
@@ -21,14 +21,19 @@ export async function analyzeLambda(filePath: string): Promise<string[]> {
 
   const sourceFile = program.getSourceFile(filePath);
   if (!sourceFile) {
-    return [`Error: Could not parse source file ${filePath}`];
+    return [
+      {
+        message: `Error: Could not parse source file ${filePath}`,
+        file: path.relative(process.cwd(), filePath),
+      },
+    ];
   }
 
   const checker = program.getTypeChecker();
 
   const expectedHandlerName = getExpectedHandlerName(filePath);
 
-  const badPractices: string[] = [];
+  const badPractices: Finding[] = [];
 
   function visit(node: ts.Node) {
     if (isHandler(node, expectedHandlerName)) {

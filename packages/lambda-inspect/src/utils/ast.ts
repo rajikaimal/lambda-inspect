@@ -1,4 +1,10 @@
 import ts from "typescript";
+import path from "node:path";
+
+export interface Finding {
+  message: string;
+  file: string;
+}
 
 export function isHandler(node: ts.Node, expectedHandlerName: string): boolean {
   if (ts.isFunctionDeclaration(node)) {
@@ -22,13 +28,19 @@ export function checkHandlerBody(
   handlerName: string,
   checker?: ts.TypeChecker,
   visited = new Set<ts.Node>(),
-): string[] {
-  const badPractices: string[] = [];
+): Finding[] {
+  const badPractices: Finding[] = [];
 
   if (visited.has(node)) {
     return badPractices;
   }
   visited.add(node);
+
+  const filePath = node.getSourceFile().fileName;
+  let relativePath = path.relative(process.cwd(), filePath);
+  if (!relativePath.startsWith(".") && !path.isAbsolute(relativePath)) {
+    relativePath = `./${relativePath}`;
+  }
 
   function checkBody(child: ts.Node) {
     if (ts.isNewExpression(child)) {
@@ -44,9 +56,10 @@ export function checkHandlerBody(
       const knownLibs = ["S3", "DynamoDB", "Lambda", "SQS", "SNS", "EventBridge", "SecretManager"];
 
       if (suspicious.some((s) => className.endsWith(s)) || knownLibs.includes(className)) {
-        badPractices.push(
-          `Instantiation of '${className}' inside handler '${handlerName}'. Move this outside the handler to benefit from execution environment reuse.`,
-        );
+        badPractices.push({
+          message: `Instantiation of '${className}' inside handler '${handlerName}'. Move this outside the handler to benefit from execution environment reuse`,
+          file: relativePath,
+        });
       }
     } else if (ts.isCallExpression(child) && checker) {
       const signature = checker.getResolvedSignature(child);
@@ -76,14 +89,21 @@ export function checkHandlerBody(
   return badPractices;
 }
 
-export function checkImportForV2(node: ts.Node): string[] {
-  const badPractices: string[] = [];
+export function checkImportForV2(node: ts.Node): Finding[] {
+  const badPractices: Finding[] = [];
+  const filePath = node.getSourceFile().fileName;
+  let relativePath = path.relative(process.cwd(), filePath);
+  if (!relativePath.startsWith(".") && !path.isAbsolute(relativePath)) {
+    relativePath = `./${relativePath}`;
+  }
 
   if (ts.isImportDeclaration(node)) {
     if (ts.isStringLiteral(node.moduleSpecifier) && node.moduleSpecifier.text === "aws-sdk") {
-      badPractices.push(
-        "Importing 'aws-sdk' (AWS SDK v2) is a bad practice. Use AWS SDK v3 (e.g., '@aws-sdk/client-s3') to reduce bundle size.",
-      );
+      badPractices.push({
+        message:
+          "Importing 'aws-sdk' (AWS SDK v2) is a bad practice. Use AWS SDK v3 (e.g., '@aws-sdk/client-s3') to reduce bundle size",
+        file: relativePath,
+      });
     }
   }
 
@@ -91,9 +111,11 @@ export function checkImportForV2(node: ts.Node): string[] {
     if (ts.isIdentifier(node.expression) && node.expression.text === "require") {
       const args = node.arguments;
       if (args.length > 0 && ts.isStringLiteral(args[0]) && args[0].text === "aws-sdk") {
-        badPractices.push(
-          "Requiring 'aws-sdk' (AWS SDK v2) is a bad practice. Use AWS SDK v3 (e.g., '@aws-sdk/client-s3') to reduce bundle size.",
-        );
+        badPractices.push({
+          message:
+            "Requiring 'aws-sdk' (AWS SDK v2) is a bad practice. Use AWS SDK v3 (e.g., '@aws-sdk/client-s3') to reduce bundle size",
+          file: relativePath,
+        });
       }
     }
   }

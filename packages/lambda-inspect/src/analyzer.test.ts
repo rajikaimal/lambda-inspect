@@ -20,7 +20,7 @@ describe("analyzer", () => {
 
     const results = await analyzeLambda(filePath);
     expect(results).toHaveLength(1);
-    expect(results[0]).toContain("Instantiation of 'S3' inside handler 'handler'");
+    expect(results[0].message).toContain("Instantiation of 'S3' inside handler 'handler'");
   });
 
   it("should extract handler name from file path", async () => {
@@ -29,7 +29,7 @@ describe("analyzer", () => {
 
     const results = await analyzeLambda(filePath);
     expect(results).toHaveLength(1);
-    expect(results[0]).toContain("Instantiation of 'S3' inside handler 'main'");
+    expect(results[0].message).toContain("Instantiation of 'S3' inside handler 'main'");
   });
 
   it("should find bad practices across modules", async () => {
@@ -44,6 +44,6 @@ describe("analyzer", () => {
 
     const results = await analyzeLambda(filePath);
     expect(results).toHaveLength(1);
-    expect(results[0]).toContain("Instantiation of 'S3' inside handler 'main'");
+    expect(results[0].message).toContain("Instantiation of 'S3' inside handler 'main'");
   });
 });

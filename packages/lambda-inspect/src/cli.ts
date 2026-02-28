@@ -31,7 +31,7 @@ program
       if (badPractices.length > 0) {
         console.log(chalk.yellow("\n⚠️  Bad Practices Detected:"));
         badPractices.forEach((bp) => {
-          console.log(chalk.yellow(`- ${bp}`));
+          console.log(chalk.yellow(`- ${bp.message} [file: ${bp.file}]`));
         });
       } else {
         console.log(chalk.green("\n✅ No bad practices detected in handler."));

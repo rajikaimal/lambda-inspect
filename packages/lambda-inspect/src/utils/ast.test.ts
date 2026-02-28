@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import ts from "typescript";
-import { isHandler, checkHandlerBody, checkImportForV2 } from "./ast";
+import { isHandler, checkHandlerBody, checkImportForV2, type Finding } from "./ast";
 
 describe("ast utils", () => {
   describe("isHandler", () => {
@@ -60,7 +60,7 @@ describe("ast utils", () => {
 
       const badPractices = checkHandlerBody(sourceFile.statements[0], "handler");
       expect(badPractices).toHaveLength(1);
-      expect(badPractices[0]).toContain("Instantiation of 'S3' inside handler 'handler'");
+      expect(badPractices[0].message).toContain("Instantiation of 'S3' inside handler 'handler'");
     });
 
     it("should detect heavy lib instantiations in handler body (function declaration)", () => {
@@ -73,7 +73,9 @@ describe("ast utils", () => {
 
       const badPractices = checkHandlerBody(sourceFile.statements[0], "handler");
       expect(badPractices).toHaveLength(1);
-      expect(badPractices[0]).toContain("Instantiation of 'DynamoDB' inside handler 'handler'");
+      expect(badPractices[0].message).toContain(
+        "Instantiation of 'DynamoDB' inside handler 'handler'",
+      );
     });
 
     it("should ignore heavy lib instantiations outside handler body", () => {
@@ -99,7 +101,7 @@ describe("ast utils", () => {
       );
       const badPractices = checkImportForV2(sourceFile.statements[0]);
       expect(badPractices).toHaveLength(1);
-      expect(badPractices[0]).toContain("Importing 'aws-sdk'");
+      expect(badPractices[0].message).toContain("Importing 'aws-sdk'");
     });
 
     it("should detect require of aws-sdk", () => {
@@ -111,7 +113,7 @@ describe("ast utils", () => {
       );
 
       // Need to traverse to the call expression
-      let practices: string[] = [];
+      const practices: Finding[] = [];
       function visit(node: ts.Node) {
         practices.push(...checkImportForV2(node));
         ts.forEachChild(node, visit);
@@ -119,7 +121,7 @@ describe("ast utils", () => {
       visit(sourceFile);
 
       expect(practices).toHaveLength(1);
-      expect(practices[0]).toContain("Requiring 'aws-sdk'");
+      expect(practices[0].message).toContain("Requiring 'aws-sdk'");
     });
 
     it("should not detect AWS SDK v3 imports", () => {
