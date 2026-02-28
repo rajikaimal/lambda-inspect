@@ -8,6 +8,9 @@
   "author": "",
   "type": "module",
   "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "tsdown --watch",
     "build": "tsdown",

@@ -6,6 +6,9 @@
   },
   "main": "./dist/cli.js",
   "module": "./dist/cli.mjs",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "tsdown src/cli.ts",
     "dev": "tsdown src/cli.ts --watch",
