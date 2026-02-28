@@ -6,9 +6,6 @@
   },
   "main": "./dist/cli.js",
   "module": "./dist/cli.mjs",
-  "engines": {
-    "node": ">=22"
-  },
   "scripts": {
     "build": "tsdown src/cli.ts",
     "dev": "tsdown src/cli.ts --watch",
@@ -24,5 +21,8 @@
     "@types/node": "catalog:",
     "tsdown": "catalog:",
     "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
