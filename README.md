@@ -45,9 +45,10 @@ pnpm install
 | `pnpm dev`    | Run in development mode with watch |
 | `pnpm test`   | Run tests                          |
 | `pnpm lint`   | Run linting (using oxlint)         |
-| `pnpm format`  | Format code (using oxfmt)          |
-| `pnpm knip`    | Run Knip analysis                  |
-| `pnpm publish` | Publish to NPM                     |
+| `pnpm format`       | Format code (using oxfmt)          |
+| `pnpm knip`         | Run Knip analysis                  |
+| `pnpm scan:secrets` | Scan for secrets using Gitleaks    |
+| `pnpm publish`      | Publish to NPM (includes scan)     |
 
 ## License
 

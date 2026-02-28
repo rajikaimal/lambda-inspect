@@ -16,7 +16,8 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "test": "vitest run",
-    "publish": "pnpm build && pnpm -r publish --access public",
+    "scan:secrets": "gitleaks detect --source . -v",
+    "publish": "pnpm scan:secrets && pnpm build && pnpm -r publish --access public",
     "prepare": "husky"
   },
   "devDependencies": {
