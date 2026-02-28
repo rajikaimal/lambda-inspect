@@ -9,6 +9,19 @@ Made with Google Antigravity.
 - **Bad Practice Detection**: Identifies libraries instantiated inside the handler that should be in the global scope for better performance (e.g., AWS SDK clients, database connections).
 - **Unused File Detection**: Integrates with Knip to find files that are not being used in your project.
 
+## Usage
+
+After building the project, you can run the CLI using:
+
+```bash
+$ lambda-inspect <path-to-handler>
+$ lambda-inspect <path-to-handler> --skip-unused-files
+```
+
+### Options
+
+- `--skip-unused-files`: Skip unused files detection (default: `false`).
+
 ## Development
 
 ### Prerequisites
@@ -26,27 +39,14 @@ pnpm install
 
 ### Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm build` | Build the project |
-| `pnpm dev` | Run in development mode with watch |
-| `pnpm test` | Run tests |
-| `pnpm lint` | Run linting (using oxlint) |
-| `pnpm format` | Format code (using oxfmt) |
-| `pnpm knip` | Run Knip analysis |
-
-## Usage
-
-After building the project, you can run the CLI using:
-
-```bash
-$ lambda-inspect <path-to-handler>
-$ lambda-inspect <path-to-handler> --skip-unused-files
-```
-
-### Options
-
-- `--skip-unused-files`: Skip unused files detection (default: `false`).
+| Command       | Description                        |
+| ------------- | ---------------------------------- |
+| `pnpm build`  | Build the project                  |
+| `pnpm dev`    | Run in development mode with watch |
+| `pnpm test`   | Run tests                          |
+| `pnpm lint`   | Run linting (using oxlint)         |
+| `pnpm format` | Format code (using oxfmt)          |
+| `pnpm knip`   | Run Knip analysis                  |
 
 ## License
 
