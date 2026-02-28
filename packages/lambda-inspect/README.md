@@ -15,6 +15,12 @@ Made with Google Antigravity.
 npx lambda-inspect@latest <path-to-handler>
 ```
 
+# Install Agent Skill
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rajikaimal/lambda-inspect/main/install-skill.sh | bash
+```
+
 ## Usage
 
 After building the project, you can run the CLI using:
