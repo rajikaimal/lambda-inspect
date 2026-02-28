@@ -1,5 +1,4 @@
 import ts from "typescript";
-import fs from "node:fs";
 import path from "node:path";
 
 import { isHandler, checkHandlerBody, checkImportForV2 } from "./utils/ast";
@@ -14,19 +13,29 @@ function getExpectedHandlerName(filePath: string): string {
 }
 
 export async function analyzeLambda(filePath: string): Promise<string[]> {
-  const fileContent = fs.readFileSync(filePath, "utf8");
-  const sourceFile = ts.createSourceFile(filePath, fileContent, ts.ScriptTarget.Latest, true);
-  
+  const program = ts.createProgram([filePath], {
+    target: ts.ScriptTarget.Latest,
+    moduleResolution: ts.ModuleResolutionKind.Node10,
+    allowJs: true,
+  });
+
+  const sourceFile = program.getSourceFile(filePath);
+  if (!sourceFile) {
+    return [`Error: Could not parse source file ${filePath}`];
+  }
+
+  const checker = program.getTypeChecker();
+
   const expectedHandlerName = getExpectedHandlerName(filePath);
 
   const badPractices: string[] = [];
 
   function visit(node: ts.Node) {
     if (isHandler(node, expectedHandlerName)) {
-      const res = checkHandlerBody(node, expectedHandlerName);
+      const res = checkHandlerBody(node, expectedHandlerName, checker);
       badPractices.push(...res);
     }
-    
+
     badPractices.push(...checkImportForV2(node));
 
     ts.forEachChild(node, visit);

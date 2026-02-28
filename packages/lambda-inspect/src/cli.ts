@@ -27,7 +27,6 @@ program
 
       console.log(chalk.blue(`Inspecting Lambda at: ${absoluteHandlerPath}`));
 
-      // Analyze for bad practices
       const badPractices = await analyzeLambda(absoluteHandlerPath);
       if (badPractices.length > 0) {
         console.log(chalk.yellow("\n⚠️  Bad Practices Detected:"));
