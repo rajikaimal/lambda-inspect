@@ -16,6 +16,7 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "test": "vitest run",
+    "publish": "pnpm build && pnpm -r publish --access public",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -1,15 +1,34 @@
 {
   "name": "lambda-inspect",
-  "version": "1.0.0",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Identify bad practices in AWS Lambda TypeScript code and let AI Agent to fix issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rajikaimal/lambda-inspect.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rajikaimal/lambda-inspect/issues"
+  },
+  "homepage": "https://github.com/rajikaimal/lambda-inspect#readme",
+  "files": [
+    "dist"
+  ],
   "bin": {
     "lambda-inspect": "./dist/cli.mjs"
   },
-  "main": "./dist/cli.js",
+  "exports": {
+    ".": {
+      "import": "./dist/cli.mjs"
+    }
+  },
+  "main": "./dist/cli.mjs",
   "module": "./dist/cli.mjs",
   "scripts": {
     "build": "tsdown src/cli.ts",
     "dev": "tsdown src/cli.ts --watch",
-    "test": "vitest run"
+    "test": "vitest run",
+    "publish:npm": "pnpm build && pnpm publish --access public"
   },
   "dependencies": {
     "chalk": "catalog:",
