@@ -1,6 +1,6 @@
 {
   "name": "lambda-inspect",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Identify bad practices in AWS Lambda TypeScript code and let AI Agent to fix issues",
   "homepage": "https://github.com/rajikaimal/lambda-inspect#readme",
   "bugs": {
