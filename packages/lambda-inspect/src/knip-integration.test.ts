@@ -7,26 +7,26 @@ const { mockExecAsync } = vi.hoisted(() => {
 });
 
 vi.mock("node:util", async (importOriginal) => {
-  const actual = await importOriginal() as Record<string, unknown>;
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
     default: {
       ...(actual.default as Record<string, unknown>),
-      promisify: () => mockExecAsync
-    }
+      promisify: () => mockExecAsync,
+    },
   };
 });
 
 describe("runKnip", () => {
   const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
   const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-  
+
   beforeEach(() => {
     mockExecAsync.mockClear();
     consoleLogSpy.mockClear();
     consoleErrorSpy.mockClear();
   });
-  
+
   afterAll(() => {
     consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
@@ -34,9 +34,9 @@ describe("runKnip", () => {
 
   it("should output stdout on success", async () => {
     mockExecAsync.mockResolvedValue({ stdout: "success output", stderr: "" });
-    
+
     await runKnip();
-    
+
     expect(mockExecAsync).toHaveBeenCalledWith("pnpm knip");
     expect(consoleLogSpy).toHaveBeenCalledWith("success output");
     expect(consoleErrorSpy).not.toHaveBeenCalled();
@@ -44,9 +44,9 @@ describe("runKnip", () => {
 
   it("should output stderr on success if present", async () => {
     mockExecAsync.mockResolvedValue({ stdout: "success output", stderr: "some warning" });
-    
+
     await runKnip();
-    
+
     expect(mockExecAsync).toHaveBeenCalledWith("pnpm knip");
     expect(consoleLogSpy).toHaveBeenCalledWith("success output");
     expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.yellow("Knip stderr:"), "some warning");
@@ -57,12 +57,15 @@ describe("runKnip", () => {
     error.stdout = "error output";
     error.stderr = "issue found";
     mockExecAsync.mockRejectedValue(error);
-    
+
     await runKnip();
-    
+
     expect(mockExecAsync).toHaveBeenCalledWith("pnpm knip");
     expect(consoleLogSpy).toHaveBeenCalledWith("error output");
-    expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red("Knip finished with issues:"), "issue found");
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      chalk.red("Knip finished with issues:"),
+      "issue found",
+    );
   });
 
   it("should only output stdout from error if no stderr present", async () => {
@@ -70,9 +73,9 @@ describe("runKnip", () => {
     error.stdout = "error output";
     error.stderr = "";
     mockExecAsync.mockRejectedValue(error);
-    
+
     await runKnip();
-    
+
     expect(mockExecAsync).toHaveBeenCalledWith("pnpm knip");
     expect(consoleLogSpy).toHaveBeenCalledWith("error output");
     expect(consoleErrorSpy).not.toHaveBeenCalled();

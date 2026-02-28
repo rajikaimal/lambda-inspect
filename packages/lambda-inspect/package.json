@@ -12,14 +12,14 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "chalk": "^5.6.2",
-    "commander": "^14.0.3",
-    "knip": "^5.85.0",
-    "typescript": "^5.9.3"
+    "chalk": "catalog:",
+    "commander": "catalog:",
+    "knip": "catalog:",
+    "typescript": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^25.2.3",
-    "tsdown": "^0.20.3",
-    "vitest": "^4.0.18"
+    "@types/node": "catalog:",
+    "tsdown": "catalog:",
+    "vitest": "catalog:"
   }
 }
