@@ -1,7 +1,7 @@
 import ts from "typescript";
 import path from "node:path";
 
-import { isHandler, checkHandlerBody, checkImportForV2, type Finding } from "./utils/ast";
+import { checkHandlerBody, checkImportForV2, getHandlerNodes, type Finding } from "./utils/ast";
 
 function getExpectedHandlerName(filePath: string): string {
   const baseName = path.basename(filePath);
@@ -35,14 +35,14 @@ export async function analyzeLambda(filePath: string): Promise<Finding[]> {
 
   const badPractices: Finding[] = [];
 
+  const handlerNodes = getHandlerNodes(sourceFile, expectedHandlerName, checker);
+  for (const node of handlerNodes) {
+    const res = checkHandlerBody(node, expectedHandlerName, checker);
+    badPractices.push(...res);
+  }
+
   function visit(node: ts.Node) {
-    if (isHandler(node, expectedHandlerName)) {
-      const res = checkHandlerBody(node, expectedHandlerName, checker);
-      badPractices.push(...res);
-    }
-
     badPractices.push(...checkImportForV2(node));
-
     ts.forEachChild(node, visit);
   }
 

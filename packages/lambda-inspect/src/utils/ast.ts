@@ -23,6 +23,124 @@ export function isHandler(node: ts.Node, expectedHandlerName: string): boolean {
   return false;
 }
 
+function isAwsSdkModule(moduleSpecifier: string): boolean {
+  return moduleSpecifier.startsWith("@aws-sdk/") || moduleSpecifier === "aws-sdk";
+}
+
+function getLeftmostIdentifier(node: ts.Expression): ts.Identifier | null {
+  if (ts.isIdentifier(node)) {
+    return node;
+  }
+  if (ts.isPropertyAccessExpression(node)) {
+    return getLeftmostIdentifier(node.expression);
+  }
+  return null;
+}
+
+function isAwsSdkClassName(className: string): boolean {
+  const awsServiceNames = new Set([
+    "S3",
+    "DynamoDB",
+    "Lambda",
+    "SQS",
+    "SNS",
+    "EventBridge",
+    "SecretsManager",
+    "SecretManager",
+    "SES",
+    "Kinesis",
+    "CloudWatch",
+    "CloudWatchLogs",
+    "StepFunctions",
+    "CognitoIdentityServiceProvider",
+    "CognitoIdentityProvider",
+    "APIGateway",
+    "STS",
+    "SSM",
+    "KMS",
+    "IAM",
+    "Athena",
+    "Translate",
+    "Rekognition",
+    "CloudFront",
+    "ECS",
+    "EKS",
+    "SFN",
+    "Route53",
+    "Redshift",
+    "DocumentClient",
+  ]);
+
+  if (awsServiceNames.has(className)) {
+    return true;
+  }
+
+  if (className.endsWith("Client")) {
+    const servicePart = className.slice(0, -6);
+    const nonAwsClients = new Set([
+      "Http",
+      "Mongo",
+      "Redis",
+      "Apollo",
+      "Rest",
+      "GraphQL",
+      "Db",
+      "Database",
+      "Tcp",
+      "Udp",
+      "Websocket",
+      "Ws",
+    ]);
+    if (nonAwsClients.has(servicePart)) {
+      return false;
+    }
+    return true;
+  }
+
+  return false;
+}
+
+export function getHandlerNodes(
+  sourceFile: ts.SourceFile,
+  expectedHandlerName: string,
+  checker?: ts.TypeChecker,
+): ts.Node[] {
+  if (checker) {
+    const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
+    if (moduleSymbol) {
+      const exports = checker.getExportsOfModule(moduleSymbol);
+      let handlerExport = exports.find((exp) => exp.name === expectedHandlerName);
+      if (handlerExport) {
+        if ((handlerExport.flags & ts.SymbolFlags.Alias) !== 0) {
+          try {
+            const aliased = checker.getAliasedSymbol(handlerExport);
+            if (aliased) {
+              handlerExport = aliased;
+            }
+          } catch {
+            // ignore
+          }
+        }
+        const declarations = handlerExport.getDeclarations();
+        if (declarations && declarations.length > 0) {
+          return declarations;
+        }
+      }
+    }
+  }
+
+  // Fallback to traversing AST for matching functions/variables
+  const nodes: ts.Node[] = [];
+  function visit(node: ts.Node) {
+    if (isHandler(node, expectedHandlerName)) {
+      nodes.push(node);
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+  return nodes;
+}
+
 export function checkHandlerBody(
   node: ts.Node,
   handlerName: string,
@@ -52,10 +170,100 @@ export function checkHandlerBody(
         return "";
       })();
 
-      const suspicious = ["Client", "Service", "DB", "Connection", "Driver"];
-      const knownLibs = ["S3", "DynamoDB", "Lambda", "SQS", "SNS", "EventBridge", "SecretManager"];
+      let isAws = false;
+      let hasResolvedSymbol = false;
+      if (checker) {
+        const leftmost = getLeftmostIdentifier(expression);
+        if (leftmost) {
+          let symbol = checker.getSymbolAtLocation(leftmost);
+          if (symbol) {
+            if ((symbol.flags & ts.SymbolFlags.Alias) !== 0) {
+              try {
+                const aliased = checker.getAliasedSymbol(symbol);
+                if (aliased) {
+                  symbol = aliased;
+                }
+              } catch {
+                // ignore
+              }
+            }
+            const declarations = symbol.getDeclarations() || [];
+            if (declarations.length > 0) {
+              hasResolvedSymbol = true;
+              for (const decl of declarations) {
+                let parent: ts.Node | undefined = decl;
+                while (parent) {
+                  if (ts.isImportDeclaration(parent)) {
+                    const moduleSpecifier = parent.moduleSpecifier;
+                    if (
+                      ts.isStringLiteral(moduleSpecifier) &&
+                      isAwsSdkModule(moduleSpecifier.text)
+                    ) {
+                      isAws = true;
+                      break;
+                    }
+                  }
+                  parent = parent.parent;
+                }
+                if (isAws) break;
 
-      if (suspicious.some((s) => className.endsWith(s)) || knownLibs.includes(className)) {
+                // Check if required from AWS SDK
+                if (ts.isVariableDeclaration(decl) && decl.initializer) {
+                  if (
+                    ts.isCallExpression(decl.initializer) &&
+                    ts.isIdentifier(decl.initializer.expression) &&
+                    decl.initializer.expression.text === "require" &&
+                    decl.initializer.arguments.length > 0
+                  ) {
+                    const firstArg = decl.initializer.arguments[0];
+                    if (ts.isStringLiteral(firstArg) && isAwsSdkModule(firstArg.text)) {
+                      isAws = true;
+                      break;
+                    }
+                  }
+                } else if (ts.isBindingElement(decl)) {
+                  let varDecl: ts.Node | undefined = decl;
+                  while (varDecl && !ts.isVariableDeclaration(varDecl)) {
+                    varDecl = varDecl.parent;
+                  }
+                  if (varDecl && ts.isVariableDeclaration(varDecl) && varDecl.initializer) {
+                    const init = varDecl.initializer;
+                    if (
+                      ts.isCallExpression(init) &&
+                      ts.isIdentifier(init.expression) &&
+                      init.expression.text === "require" &&
+                      init.arguments.length > 0
+                    ) {
+                      const firstArg = init.arguments[0];
+                      if (ts.isStringLiteral(firstArg) && isAwsSdkModule(firstArg.text)) {
+                        isAws = true;
+                        break;
+                      }
+                    }
+                  }
+                }
+
+                // Check if declaration is in node_modules/@aws-sdk/ or node_modules/aws-sdk/
+                const sourceFile = decl.getSourceFile();
+                if (sourceFile) {
+                  const fileName = sourceFile.fileName;
+                  if (
+                    fileName.includes("node_modules/@aws-sdk/") ||
+                    fileName.includes("node_modules/aws-sdk/")
+                  ) {
+                    isAws = true;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      const shouldReport = hasResolvedSymbol ? isAws : isAwsSdkClassName(className);
+
+      if (shouldReport) {
         badPractices.push({
           message: `Instantiation of '${className}' inside handler '${handlerName}'. Move this outside the handler to benefit from execution environment reuse`,
           file: relativePath,
